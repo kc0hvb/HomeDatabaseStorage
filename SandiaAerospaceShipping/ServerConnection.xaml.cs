@@ -22,40 +22,22 @@ namespace SandiaAerospaceShipping
     /// </summary>
     public partial class Window1 : Window
     {
+        
         public Window1()
         {
+            GettingSettings Settings = new GettingSettings();
             InitializeComponent();
+            Settings.SettingValuesFromConfig();
+            Settings.FillingOutTxtBox();
+            
         }
 
         private void button_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
-        }
-
-        private void SavingSettings()
-        {
-            string appPath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string configFile = System.IO.Path.Combine(appPath, "Conan Exiles Server Admin.exe.config");
-            ExeConfigurationFileMap configFileMap = new ExeConfigurationFileMap();
-            configFileMap.ExeConfigFilename = configFile;
-            Configuration config = ConfigurationManager.OpenMappedExeConfiguration(configFileMap, ConfigurationUserLevel.None);
-
-            if (txtServer.Text != "") config.AppSettings.Settings["Server"].Value = txtServer.Text.ToString();
-            if (txtDatabase.Text != "") config.AppSettings.Settings["Database"].Value = txtDatabase.Text.ToString();
-            if (txtUsername.Text != "") config.AppSettings.Settings["UserName"].Value = txtUsername.Text.ToString();
-            if (passwordBox.ToString() != "")
-            {
-                var secure = new SecureString();
-                foreach (char c in passwordBox.ToString())
-                {
-                    secure.AppendChar(c);
-                }
-                config.AppSettings.Settings["Password"].Value = GettingSettings.EncryptString(secure);
-            }
-
-            config.Save();
             GettingSettings Settings = new GettingSettings();
+            Settings.SavingSettings();
             Settings.SettingValuesFromConfig();
+            this.Close();
         }
 
         private void cancel_button_Click(object sender, RoutedEventArgs e)
