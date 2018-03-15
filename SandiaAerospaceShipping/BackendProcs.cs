@@ -12,13 +12,12 @@ namespace SandiaAerospaceShipping
 {
     public class GettingSettings
     {
-
-        Window1 ServerConnForm = new Window1();
-        public string _sServer { get; set; }
-        public string _sDatabaseName { get; set; }
-        public string _sUserName { get; set; }
-        public SecureString _sPassword { get; set; }
-        public Configuration ConfigurationLocation()
+        
+        public static string _sServer { get; set; }
+        public static string _sDatabaseName { get; set; }
+        public static string _sUserName { get; set; }
+        public static SecureString _sPassword { get; set; }
+        public static Configuration ConfigurationLocation()
         {
             string appPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             string configFile = System.IO.Path.Combine(appPath, "SandiaAerospaceShipping.exe.config");
@@ -27,7 +26,7 @@ namespace SandiaAerospaceShipping
             Configuration config = ConfigurationManager.OpenMappedExeConfiguration(configFileMap, ConfigurationUserLevel.None);
             return config;
         }
-        public void SettingValuesFromConfig()
+        public static void SettingValuesFromConfig()
         {
             Configuration config = ConfigurationLocation();
             try
@@ -40,32 +39,6 @@ namespace SandiaAerospaceShipping
             catch
             {
             }
-        }
-        public void SavingSettings()
-        {
-            Configuration config = ConfigurationLocation();
-
-            if (ServerConnForm.txtServer.Text != "") config.AppSettings.Settings["Server"].Value = ServerConnForm.txtServer.Text.ToString();
-            if (ServerConnForm.txtDatabase.Text != "") config.AppSettings.Settings["Database"].Value = ServerConnForm.txtDatabase.Text.ToString();
-            if (ServerConnForm.txtUsername.Text != "") config.AppSettings.Settings["UserName"].Value = ServerConnForm.txtUsername.Text.ToString();
-            if (ServerConnForm.passwordBox.Password.ToString() != "")
-            {
-                var secure = new SecureString();
-                foreach (char c in ServerConnForm.passwordBox.Password.ToString())
-                {
-                    secure.AppendChar(c);
-                }
-                config.AppSettings.Settings["Password"].Value = Password.EncryptString(secure);
-            }
-
-            config.Save();
-        }
-
-        public void FillingOutTxtBox()
-        {
-            ServerConnForm.txtServer.Text = _sServer.ToString();
-            ServerConnForm.txtDatabase.Text = _sDatabaseName.ToString(); ;
-            ServerConnForm.txtUsername.Text = _sUserName.ToString();
         }
     }
     public class Password
@@ -126,4 +99,5 @@ namespace SandiaAerospaceShipping
         #endregion
 
     }
+    
 }

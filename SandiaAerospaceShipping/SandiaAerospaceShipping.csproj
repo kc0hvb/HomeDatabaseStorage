@@ -57,7 +57,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="ConfigurationProcs.cs" />
+    <Compile Include="BackendProcs.cs" />
     <Compile Include="ServerConnection.xaml.cs">
       <DependentUpon>ServerConnection.xaml</DependentUpon>
     </Compile>
