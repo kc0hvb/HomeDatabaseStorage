@@ -38,15 +38,20 @@ namespace SandiaAerospaceShipping
             {
                 try
                 {
-                    string sqlConn = BuildingConnectionString();
-                    DatabaseProcedure.BuildingTable(sqlConn);
-                    DatabaseProcedure.BuildingColumns(sqlConn);
+                    string sqlConn = DatabaseProcedure.BuildingConnectionString();
+                    if (sqlConn != "")
+                    {
+                        DatabaseProcedure.BuildingTable(sqlConn);
+                        DatabaseProcedure.BuildingColumns(sqlConn);
+                    }
                 }
                 catch (Exception ex)
                 { MessageBox.Show(ex.Message.ToString()); }
             }
             dgComponent.CanUserAddRows = false;
+            dataGrid.CanUserAddRows = false;
             AddingComponentsToGrid();
+            FillingMainDataGrid();
         }
         public void AddingComponentsToGrid()
         {
@@ -78,7 +83,7 @@ namespace SandiaAerospaceShipping
 
         private void bttnSave_Click(object sender, RoutedEventArgs e)
         {
-            InsertingIntoDB();
+            DatabaseProcedure.InsertingIntoDB(InsertQuery());
             MyCollection = null;
             AddingComponentsToGrid();
             dgComponent.Items.Refresh();
@@ -118,31 +123,13 @@ namespace SandiaAerospaceShipping
             catch (Exception ex)
             { MessageBox.Show(ex.Message.ToString()); }
             return sRet;
-
-
-        }
-        public string BuildingConnectionString()
-        {
-            GettingSettings Settings = new GettingSettings();
-            GettingSettings.SettingValuesFromConfig();
-            string sDecryptedPword = Password.ToInsecureString(GettingSettings._sPassword);
-            string sqlConn = $"Server = {GettingSettings._sServer}; Database = {GettingSettings._sDatabaseName}; User Id = {GettingSettings._sUserName}; Password = {sDecryptedPword};";
-            return sqlConn;
         }
 
-        public void InsertingIntoDB()
+        private void FillingMainDataGrid()
         {
-            string sSqlConnString = BuildingConnectionString();
-            SqlConnection SqlCon = new SqlConnection(sSqlConnString);
-            try
-            {
-                SqlCon.Open();
-                SqlCommand SQLCom = new SqlCommand(InsertQuery(), SqlCon);
-                SQLCom.ExecuteNonQuery();
-                SqlCon.Close();
-
-            }
-            catch(Exception ex) { MessageBox.Show(ex.Message.ToString()); }
+            string sQuery = "SELECT * FROM Shipping_Log";
+            DataTable dtInfo = DatabaseProcedure.GettingInfoFromDatabase(sQuery);
+            dataGrid.ItemsSource = dtInfo.DefaultView;
         }
 
     }
@@ -162,6 +149,22 @@ namespace SandiaAerospaceShipping
                 MyCollectionList = items;
             }
             catch { }
+        }
+
+        public static string BuildingConnectionString()
+        {
+            string sqlConn = string.Empty;
+            if ((GettingSettings._sServer != "" && GettingSettings._sServer != null) &&
+                    (GettingSettings._sDatabaseName != "" && GettingSettings._sDatabaseName != null) &&
+                    (GettingSettings._sUserName != "" && GettingSettings._sUserName != null) &&
+                    (GettingSettings._sPassword != null))
+            {
+                GettingSettings Settings = new GettingSettings();
+                GettingSettings.SettingValuesFromConfig();
+                string sDecryptedPword = Password.ToInsecureString(GettingSettings._sPassword);
+                sqlConn = $"Server = {GettingSettings._sServer}; Database = {GettingSettings._sDatabaseName}; User Id = {GettingSettings._sUserName}; Password = {sDecryptedPword};";
+            }
+            return sqlConn;
         }
 
         public static void BuildingTable(string pSQLConn)
@@ -202,6 +205,41 @@ namespace SandiaAerospaceShipping
             SQLConn.Open();
             SQLCom.ExecuteNonQuery();
             SQLConn.Close();
+        }
+        public static void InsertingIntoDB(string pQuery)
+        {
+            string sSqlConnString = BuildingConnectionString();
+            if (sSqlConnString != "")
+            {
+                SqlConnection SqlCon = new SqlConnection(sSqlConnString);
+                try
+                {
+                    SqlCon.Open();
+                    SqlCommand SQLCom = new SqlCommand(pQuery, SqlCon);
+                    SQLCom.ExecuteNonQuery();
+                    SqlCon.Close();
+
+                }
+
+                catch (Exception ex) { MessageBox.Show(ex.Message.ToString()); }
+            }
+        }
+        public static DataTable GettingInfoFromDatabase(string pQuery)
+        {
+            DataTable dtInfo = new DataTable();
+            string sSqlConnString = BuildingConnectionString();
+            if (sSqlConnString != "")
+            {
+                SqlConnection SqlCon = new SqlConnection(sSqlConnString);
+                try
+                {
+                    SqlCommand SQLCom = new SqlCommand(pQuery, SqlCon);
+                    SqlDataAdapter sda = new SqlDataAdapter(SQLCom);
+                    sda.Fill(dtInfo);
+                }
+                catch (Exception ex) { MessageBox.Show(ex.Message.ToString()); }
+            }
+            return dtInfo;
         }
 
     }
