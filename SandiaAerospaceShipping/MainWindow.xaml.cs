@@ -123,6 +123,7 @@ namespace SandiaAerospaceShipping
 
         private void bttnSave_Click(object sender, RoutedEventArgs e)
         {
+            dtShipDate.Text = DateTime.Now.ToString();
             DatabaseProcedure.InsertingIntoDB(InsertQuery());
             MyCollection = null;
             txtCompany.Text = "";
