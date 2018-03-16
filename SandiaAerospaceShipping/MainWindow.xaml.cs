@@ -19,6 +19,8 @@ using System.Security;
 using System.Data;
 using System.Collections.ObjectModel;
 using System.Data.SqlClient;
+using System.Timers;
+using System.Text.RegularExpressions;
 
 namespace SandiaAerospaceShipping
 {
@@ -50,11 +52,37 @@ namespace SandiaAerospaceShipping
             }
             dgComponent.CanUserAddRows = false;
             dataGrid.CanUserAddRows = false;
+            dtShipDate.Text = DateTime.Now.ToString();
+            AddingItemsToDropDownList();
             AddingComponentsToGrid();
             FillingMainDataGrid();
+            //StartingTimertoRefresh();
         }
+
+        private void StartingTimertoRefresh()
+        {
+            System.Timers.Timer aTimer = new System.Timers.Timer();
+            aTimer.Elapsed += new ElapsedEventHandler(OnTimedEvent);
+            aTimer.Interval = 3600000;
+            aTimer.Enabled = true;
+        }
+
+        private void OnTimedEvent(object source, ElapsedEventArgs e)
+        {
+            try
+            {
+                this.Dispatcher.Invoke(() =>
+                FillingMainDataGrid());
+                this.Dispatcher.Invoke(() =>
+                dtShipDate.Text = DateTime.Now.ToString());
+            }
+            catch { }
+        }
+
+        #region Adding Items to the UI
         public void AddingComponentsToGrid()
         {
+            MyCollection = null;
             List<ComponentsList> items = new List<ComponentsList>();
             try
             {
@@ -70,11 +98,23 @@ namespace SandiaAerospaceShipping
             dgComponent.ItemsSource = MyCollection;
         }
 
+        private void AddingItemsToDropDownList()
+        {
+            ObservableCollection<string> DropList = new ObservableCollection<string>();
+            string[] lsShipping = { "UPS", "FedEx", "USPS" };
+            foreach (string item in lsShipping)
+            {
+                DropList.Add(item);
+            }
+            this.cbShippingCompany.ItemsSource = DropList;
+        }
+
         public static List<string> Components()
         {
             List<string> lComponentList = new List<string> { "SR23", "SR24", "SR25" };
             return lComponentList;
         }
+        #endregion
 
         private void lbComponents_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -85,14 +125,19 @@ namespace SandiaAerospaceShipping
         {
             DatabaseProcedure.InsertingIntoDB(InsertQuery());
             MyCollection = null;
+            txtCompany.Text = "";
+            cbShippingCompany.Text = "";
+            chckbRepair.IsChecked = false;
+            txtCost.Text = "0";
             AddingComponentsToGrid();
-            dgComponent.Items.Refresh();
+            FillingMainDataGrid();
         }
 
         private void dataGrid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             
         }
+
 
         private void button_Click(object sender, RoutedEventArgs e)
         {
@@ -104,10 +149,12 @@ namespace SandiaAerospaceShipping
             string sRet = string.Empty;
             string Columns = string.Empty;
             string Values = string.Empty;
+            int isRepair = 0;
+            if (chckbRepair.IsChecked == true) { isRepair = 1; }
             try
             {
-                Columns = "Company, Shipping_Date, ";
-                Values = "'" + txtCompany.Text.ToString() + "', '" + dtShipDate.ToString() + "', ";
+                Columns = "Company, Shipping_Date, Shipping_Company, Cost, Repair, ";
+                Values = "'" + txtCompany.Text.ToString() + "', '" + dtShipDate.ToString() + "', '" + cbShippingCompany.Text.ToString() + "', " + txtCost.Text.ToString() + ", " + isRepair + ", ";
 
                 foreach (var item in MyCollection)
                 {
@@ -127,11 +174,36 @@ namespace SandiaAerospaceShipping
 
         private void FillingMainDataGrid()
         {
-            string sQuery = "SELECT * FROM Shipping_Log";
-            DataTable dtInfo = DatabaseProcedure.GettingInfoFromDatabase(sQuery);
-            dataGrid.ItemsSource = dtInfo.DefaultView;
+            try
+            {
+                string sQuery = "SELECT * FROM Shipping_Log";
+                DataTable dtInfo = DatabaseProcedure.GettingInfoFromDatabase(sQuery);
+                dataGrid.ItemsSource = dtInfo.DefaultView;
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message.ToString()); }
         }
 
+        private void txtCost_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            e.Handled = Regex.IsMatch(txtCost.Text, "[^0-9]+");
+        }
+
+        private void txtCost_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            e.Handled = Regex.IsMatch(e.Text, "[^0-9]+");
+        }
+        private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            var textBox = sender as TextBox;
+            e.Handled = Regex.IsMatch(e.Text, "[^0-9]+");
+        }
+
+        private void bttnRefresh_Click(object sender, RoutedEventArgs e)
+        {
+            FillingMainDataGrid();
+        }
     }
 
     public class DatabaseProcedure
@@ -191,6 +263,9 @@ namespace SandiaAerospaceShipping
             string SQLQuery = string.Empty;
             InsertingColumns(pSQLConn, "Company", "varchar(255)");
             InsertingColumns(pSQLConn, "Shipping_Date", "datetime");
+            InsertingColumns(pSQLConn, "Cost", "int");
+            InsertingColumns(pSQLConn, "Shipping_Company", "varchar(255)");
+            InsertingColumns(pSQLConn, "Repair", "bit");
             foreach (var item in MyCollectionList)
             {
                 InsertingColumns(pSQLConn, item.sComponent.ToString(), "int");
