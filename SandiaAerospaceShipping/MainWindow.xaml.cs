@@ -88,7 +88,7 @@ namespace SandiaAerospaceShipping
             {
                 foreach (string sCom in Components())
                 {
-                    items.Add(new ComponentsList() { sComponent = sCom, iQuantity = 0 });
+                    items.Add(new ComponentsList() { sComponent = sCom.Replace("_", " "), iQuantity = 0 });
                 }
                 MyCollectionList = items;
             }
@@ -111,7 +111,12 @@ namespace SandiaAerospaceShipping
 
         public static List<string> Components()
         {
-            List<string> lComponentList = new List<string> { "SR23", "SR24", "SR25" };
+            List<string> lComponentList = new List<string> { "Safe_128", "Safe_328", "Safe_5285", "ACF_314", "ACF_328", "ACF_528",
+                                                            "SRU_1", "SRU_5","SRU_5_Mod","SRU_10", "ST_26", "ST_32_00", "ST_32_01",
+                                                            "AIS_200B_35", "AIS_240B_35", "SA_3", "SA_3_L", "SA_3_NVG", "SA_15", "SA_24",
+                                                            "SR_34_1", "SR_54_1", "SR_64_1", "SR_263", "SR_623", "GI_205", "STX_165",
+                                                            "STX_165_Remote", "SAE_5_35", "360_PM", "360_Remote", "KI_300", "SAI_340",
+                                                            "305477_00_Kit"};
             return lComponentList;
         }
         #endregion
@@ -217,7 +222,7 @@ namespace SandiaAerospaceShipping
             {
                 foreach (string sCom in MainWindow.Components())
                 {
-                    items.Add(new ComponentsList() { sComponent = sCom, iQuantity = 0 });
+                    items.Add(new ComponentsList() { sComponent = sCom.Replace("_", " "), iQuantity = 0 });
                 }
                 MyCollectionList = items;
             }
@@ -269,19 +274,26 @@ namespace SandiaAerospaceShipping
             InsertingColumns(pSQLConn, "Repair", "bit");
             foreach (var item in MyCollectionList)
             {
-                InsertingColumns(pSQLConn, item.sComponent.ToString(), "int");
+                InsertingColumns(pSQLConn, item.sComponent.Replace(" ", "_"), "int");
             }
         }
         public static void InsertingColumns(string pSQLConn, string pColumn, string pFType)
         {
-            string SQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = N'{0}') " +
-                                     "BEGIN ALTER TABLE Shipping_Log ADD {0} {1}; END", pColumn, pFType);
-            SqlConnection SQLConn = new SqlConnection(pSQLConn);
-            SqlCommand SQLCom = new SqlCommand(SQLQuery, SQLConn);
-            SQLConn.Open();
-            SQLCom.ExecuteNonQuery();
-            SQLConn.Close();
-        }
+            try
+            {
+                string SQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = N'{0}') " +
+                                         "BEGIN ALTER TABLE Shipping_Log ADD {0} {1}; END", pColumn, pFType);
+                SqlConnection SQLConn = new SqlConnection(pSQLConn);
+                SqlCommand SQLCom = new SqlCommand(SQLQuery, SQLConn);
+                SQLConn.Open();
+                SQLCom.ExecuteNonQuery();
+                SQLConn.Close();
+            }
+            catch
+            {
+
+            }
+            }
         public static void InsertingIntoDB(string pQuery)
         {
             string sSqlConnString = BuildingConnectionString();
