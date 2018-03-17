@@ -43,6 +43,7 @@ namespace SandiaAerospaceShipping
                     string sqlConn = DatabaseProcedure.BuildingConnectionString();
                     if (sqlConn != "")
                     {
+                        DatabaseProcedure.BuildingDatabase(sqlConn);
                         DatabaseProcedure.BuildingTable(sqlConn);
                         DatabaseProcedure.BuildingColumns(sqlConn);
                     }
@@ -164,7 +165,9 @@ namespace SandiaAerospaceShipping
 
                 foreach (var item in MyCollection)
                 {
-                    Columns += item.sComponent + ", ";
+                    if (Regex.IsMatch(item.sComponent, @"^\d"))
+                        item.sComponent = '"' + item.sComponent + '"';
+                    Columns += item.sComponent.Replace(" ", "_") + ", ";
                     Values += item.iQuantity + ", ";
                 }
                 Columns = (Columns.Trim()).TrimEnd(',');
@@ -245,22 +248,50 @@ namespace SandiaAerospaceShipping
             return sqlConn;
         }
 
+        public static void BuildingDatabase(string pSQLConn)
+
+        {
+
+            string sSqlConnString = BuildingConnectionString();
+            string sSQLQuery = string.Format("DECLARE @dbname nvarchar(128) " +
+                                             "SET @dbname = N'{0}' " +
+                                             "IF(NOT EXISTS(SELECT name " +
+                                             "FROM master.dbo.sysdatabases " +
+                                             "WHERE('[' + name + ']' = @dbname " +
+                                             "OR name = @dbname))) CREATE DATABASE {0}", GettingSettings._sDatabaseName);
+            if (sSqlConnString != "")
+            {
+                SqlConnection SqlCon = new SqlConnection(sSqlConnString.Replace(GettingSettings._sDatabaseName, "master"));
+                try
+                {
+                    SqlCon.Open();
+                    SqlCommand SQLCom = new SqlCommand(sSQLQuery, SqlCon);
+                    SQLCom.ExecuteNonQuery();
+                    SqlCon.Close();
+
+                }
+
+                catch (Exception ex) { MessageBox.Show(ex.Message.ToString()); }
+            }
+        }
         public static void BuildingTable(string pSQLConn)
         {
-            string CommandText = "IF (NOT EXISTS (SELECT * " +
-                                 "FROM INFORMATION_SCHEMA.TABLES " +
-                                 "WHERE TABLE_SCHEMA = 'dbo' " +
-                                 "AND TABLE_NAME = 'Shipping_Log')) " +
-                                 "BEGIN " +
-                                 "CREATE TABLE[dbo].[Shipping_Log]([Log_ID][int] IDENTITY(1, 1) NOT NULL PRIMARY KEY NONCLUSTERED " +
-                                 "([Log_ID] ASC)WITH(PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, " +
-                                 "IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]) ON[PRIMARY] END";
-            SqlConnection SQLConn = new SqlConnection(pSQLConn);
-            SqlCommand SQLCom = new SqlCommand(CommandText, SQLConn);
-            SQLConn.Open();
-            SQLCom.ExecuteNonQuery();
-            SQLConn.Close();
-
+            try
+            {
+                string sSQLQuery = "IF (NOT EXISTS (SELECT * " +
+                                     "FROM INFORMATION_SCHEMA.TABLES " +
+                                     "WHERE TABLE_SCHEMA = 'dbo' " +
+                                     "AND TABLE_NAME = 'Shipping_Log')) " +
+                                     "BEGIN " +
+                                     "CREATE TABLE[dbo].[Shipping_Log]([Log_ID][int] IDENTITY(1, 1) NOT NULL PRIMARY KEY NONCLUSTERED " +
+                                     "([Log_ID] ASC)WITH(PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, " +
+                                     "IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]) ON[PRIMARY] END";
+                InsertingIntoDB(sSQLQuery);
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message.ToString());
+            }
         }
 
         public static void BuildingColumns(string pSQLConn)
@@ -281,13 +312,17 @@ namespace SandiaAerospaceShipping
         {
             try
             {
-                string SQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = N'{0}') " +
+                string SQLQuery = "";
+                if (Regex.IsMatch(pColumn, @"^\d"))
+                {
+                    string sAddingColumn = '"' + pColumn + '"';
+                    SQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = '{0}') " +
+                                     "BEGIN ALTER TABLE Shipping_Log ADD {1} {2}; END", pColumn, sAddingColumn, pFType);
+                }
+                else
+                    SQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = '{0}') " +
                                          "BEGIN ALTER TABLE Shipping_Log ADD {0} {1}; END", pColumn, pFType);
-                SqlConnection SQLConn = new SqlConnection(pSQLConn);
-                SqlCommand SQLCom = new SqlCommand(SQLQuery, SQLConn);
-                SQLConn.Open();
-                SQLCom.ExecuteNonQuery();
-                SQLConn.Close();
+                InsertingIntoDB(SQLQuery);
             }
             catch
             {
