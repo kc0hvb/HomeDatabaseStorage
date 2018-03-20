@@ -29,9 +29,12 @@ namespace SandiaAerospaceShipping
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Static Memebers
         private List<ComponentsList> MyCollectionList { get; set; }
         private static ObservableCollection<ComponentsList> MyCollection { get; set; }
         private static DatabaseProcedure dbProc = new DatabaseProcedure();
+        #endregion
+
         public MainWindow()
         {
             InitializeComponent();
@@ -60,6 +63,7 @@ namespace SandiaAerospaceShipping
             //StartingTimertoRefresh();
         }
 
+        #region Timer Events
         private void StartingTimertoRefresh()
         {
             System.Timers.Timer aTimer = new System.Timers.Timer();
@@ -79,6 +83,7 @@ namespace SandiaAerospaceShipping
             }
             catch { }
         }
+        #endregion
 
         #region Adding Items to the UI
         public void AddingComponentsToGrid()
@@ -87,7 +92,7 @@ namespace SandiaAerospaceShipping
             List<ComponentsList> items = new List<ComponentsList>();
             try
             {
-                foreach (string sCom in Components())
+                foreach (string sCom in DatabaseProcedure.Components())
                 {
                     items.Add(new ComponentsList() { sComponent = sCom.Replace("_", " "), iQuantity = 0 });
                 }
@@ -109,48 +114,8 @@ namespace SandiaAerospaceShipping
             }
             this.cbShippingCompany.ItemsSource = DropList;
         }
-
-        public static List<string> Components()
-        {
-            List<string> lComponentList = new List<string> { "Safe_128", "Safe_328", "Safe_528", "ACF_314", "ACF_328", "ACF_528",
-                                                            "SRU_1", "SRU_5","SRU_5_Mod","SRU_10", "ST_26", "ST_32_00", "ST_32_01",
-                                                            "AIS_200B_35", "AIS_240B_35", "SA_3", "SA_3_L", "SA_3_NVG", "SA_15", "SA_24",
-                                                            "SR_34_1", "SR_54_1", "SR_64_1", "SR_263", "SR_623", "GI_205", "STX_165",
-                                                            "STX_165_Remote", "SAE_5_35", "360_PM", "360_Remote", "KI_300", "SAI_340",
-                                                            "305477_00_Kit", "ADC_00", "ADC_01", "Panel Punch"};
-            return lComponentList;
-        }
         #endregion
 
-        private void lbComponents_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
-
-        private void bttnSave_Click(object sender, RoutedEventArgs e)
-        {
-            dtShipDate.Text = DateTime.Now.ToString();
-            DatabaseProcedure.InsertingIntoDB(InsertQuery());
-            MyCollection = null;
-            txtCompany.Text = "";
-            cbShippingCompany.Text = "";
-            chckbRepair.IsChecked = false;
-            txtCost.Text = "0";
-            AddingComponentsToGrid();
-            FillingMainDataGrid();
-        }
-
-        private void dataGrid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            
-        }
-
-
-        private void button_Click(object sender, RoutedEventArgs e)
-        {
-            Window1 ServerConn = new Window1();
-            ServerConn.Show();
-        }
         public string InsertQuery()
         {
             string sRet = string.Empty;
@@ -181,6 +146,12 @@ namespace SandiaAerospaceShipping
             return sRet;
         }
 
+        #region UI Events
+        private void button_Click(object sender, RoutedEventArgs e)
+        {
+            Window1 ServerConn = new Window1();
+            ServerConn.Show();
+        }
         private void FillingMainDataGrid()
         {
             try
@@ -191,13 +162,11 @@ namespace SandiaAerospaceShipping
             }
             catch (Exception ex) { MessageBox.Show(ex.Message.ToString()); }
         }
-
         private void txtCost_TextChanged(object sender, TextChangedEventArgs e)
         {
             var textBox = sender as TextBox;
             e.Handled = Regex.IsMatch(txtCost.Text, "[^0-9]+");
         }
-
         private void txtCost_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             var textBox = sender as TextBox;
@@ -208,22 +177,55 @@ namespace SandiaAerospaceShipping
             var textBox = sender as TextBox;
             e.Handled = Regex.IsMatch(e.Text, "[^0-9]+");
         }
-
         private void bttnRefresh_Click(object sender, RoutedEventArgs e)
         {
             FillingMainDataGrid();
         }
+        private void bttnSave_Click(object sender, RoutedEventArgs e)
+        {
+            dtShipDate.Text = DateTime.Now.ToString();
+            DatabaseProcedure.InsertingIntoDB(InsertQuery());
+            MyCollection = null;
+            txtCompany.Text = "";
+            cbShippingCompany.Text = "";
+            chckbRepair.IsChecked = false;
+            txtCost.Text = "0";
+            AddingComponentsToGrid();
+            FillingMainDataGrid();
+        }
+        #endregion
+
+        #region Selection Change Events
+        private void lbComponents_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+        private void dataGrid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+        #endregion
     }
 
     public class DatabaseProcedure
     {
+        public static List<string> Components()
+        {
+            List<string> lComponentList = new List<string> { "Safe_128", "Safe_328", "Safe_528", "ACF_314", "ACF_328", "ACF_528",
+                                                            "SRU_1", "SRU_5","SRU_5_Mod","SRU_10", "ST_26", "ST_32_00", "ST_32_01",
+                                                            "AIS_200B_35", "AIS_240B_35", "SA_3", "SA_3_L", "SA_3_NVG", "SA_15", "SA_24",
+                                                            "SR_34_1", "SR_54_1", "SR_64_1", "SR_263", "SR_623", "GI_205", "STX_165",
+                                                            "STX_165_Remote", "SAE_5_35", "360_PM", "360_Remote", "KI_300", "SAI_340",
+                                                            "305477_00_Kit", "ADC_00", "ADC_01", "Panel Punch"};
+            return lComponentList;
+        }
         private static List<ComponentsList> MyCollectionList { get; set; }
         private static void FillingOutList()
         {
             List<ComponentsList> items = new List<ComponentsList>();
             try
             {
-                foreach (string sCom in MainWindow.Components())
+                foreach (string sCom in Components())
                 {
                     items.Add(new ComponentsList() { sComponent = sCom.Replace("_", " "), iQuantity = 0 });
                 }
@@ -231,7 +233,6 @@ namespace SandiaAerospaceShipping
             }
             catch { }
         }
-
         public static string BuildingConnectionString()
         {
             string sqlConn = string.Empty;
@@ -247,7 +248,6 @@ namespace SandiaAerospaceShipping
             }
             return sqlConn;
         }
-
         public static void BuildingDatabase(string pSQLConn)
 
         {
