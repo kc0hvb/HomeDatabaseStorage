@@ -32,6 +32,8 @@ namespace SandiaAerospaceShipping
         private List<ComponentsList> MyCollectionList { get; set; }
         private static ObservableCollection<ComponentsList> MyCollection { get; set; }
         private static DatabaseProcedure dbProc = new DatabaseProcedure();
+        private static int iLogID { get; set; }
+        private static string sCompany { get; set; }
         public MainWindow()
         {
             InitializeComponent();
@@ -56,7 +58,7 @@ namespace SandiaAerospaceShipping
             dtShipDate.Text = DateTime.Now.ToString();
             AddingItemsToDropDownList();
             AddingComponentsToGrid();
-            FillingMainDataGrid();
+            FillingMainDataGrid(false);
             //StartingTimertoRefresh();
         }
 
@@ -73,7 +75,7 @@ namespace SandiaAerospaceShipping
             try
             {
                 this.Dispatcher.Invoke(() =>
-                FillingMainDataGrid());
+                FillingMainDataGrid(true));
                 this.Dispatcher.Invoke(() =>
                 dtShipDate.Text = DateTime.Now.ToString());
             }
@@ -137,7 +139,7 @@ namespace SandiaAerospaceShipping
             chckbRepair.IsChecked = false;
             txtCost.Text = "0";
             AddingComponentsToGrid();
-            FillingMainDataGrid();
+            FillingMainDataGrid(true);
         }
 
         private void dataGrid1_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -181,15 +183,19 @@ namespace SandiaAerospaceShipping
             return sRet;
         }
 
-        private void FillingMainDataGrid()
+        private void FillingMainDataGrid(bool pRefresh)
         {
             try
             {
+                DataTable dtInfo = new DataTable();
                 string sQuery = DatabaseProcedure.OrderingColumns();
-                DataTable dtInfo = DatabaseProcedure.GettingInfoFromDatabase(sQuery);
+                dtInfo = DatabaseProcedure.GettingInfoFromDatabase(sQuery);
                 dataGrid.ItemsSource = dtInfo.DefaultView;
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message.ToString()); }
+            catch (Exception ex)
+            {
+               // MessageBox.Show(ex.Message.ToString());
+            }
         }
 
         private void txtCost_TextChanged(object sender, TextChangedEventArgs e)
@@ -211,7 +217,27 @@ namespace SandiaAerospaceShipping
 
         private void bttnRefresh_Click(object sender, RoutedEventArgs e)
         {
-            FillingMainDataGrid();
+            FillingMainDataGrid(true);
+        }
+
+        private void bttnDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show(string.Format("This will delete LogID: {0} for Company: {1}?", iLogID, sCompany),  "Delete Shipment Log", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                DatabaseProcedure.DeletingFromLog(iLogID);
+                FillingMainDataGrid(true);
+            }
+            else
+            {
+                //No Stuff
+            }
+        }
+
+        private void dataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            DataRowView drv = (DataRowView)dataGrid.SelectedItem;
+            iLogID = Int32.Parse((drv["Log_ID"]).ToString());
+            sCompany = (drv["Company"]).ToString();
         }
     }
 
@@ -231,7 +257,6 @@ namespace SandiaAerospaceShipping
             }
             catch { }
         }
-
         public static string BuildingConnectionString()
         {
             string sqlConn = string.Empty;
@@ -247,7 +272,6 @@ namespace SandiaAerospaceShipping
             }
             return sqlConn;
         }
-
         public static void BuildingDatabase(string pSQLConn)
 
         {
@@ -287,6 +311,15 @@ namespace SandiaAerospaceShipping
                                      "([Log_ID] ASC)WITH(PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, " +
                                      "IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]) ON[PRIMARY] END";
                 InsertingIntoDB(sSQLQuery);
+                sSQLQuery = "IF (NOT EXISTS (SELECT * " +
+                                      "FROM INFORMATION_SCHEMA.TABLES " +
+                                      "WHERE TABLE_SCHEMA = 'dbo' " +
+                                      "AND TABLE_NAME = 'Components')) " +
+                                      "BEGIN " +
+                                      "CREATE TABLE[dbo].[Components]([Component_ID][int] IDENTITY(1, 1) NOT NULL PRIMARY KEY NONCLUSTERED " +
+                                      "([Component_ID] ASC)WITH(PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, " +
+                                      "IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]) ON[PRIMARY] END";
+                InsertingIntoDB(sSQLQuery);
             }
             catch(Exception ex)
             {
@@ -322,6 +355,15 @@ namespace SandiaAerospaceShipping
                     SQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = '{0}') " +
                                          "BEGIN ALTER TABLE Shipping_Log ADD {0} {1}; END", pColumn, pFType);
                 InsertingIntoDB(SQLQuery);
+                SQLQuery = "IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'Components') " +
+                     "BEGIN ALTER TABLE Components ADD Components varchar(255); END";
+                InsertingIntoDB(SQLQuery);
+                foreach (string sComponent in MainWindow.Components())
+                {
+                    SQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM Components WHERE Components = '{0}') " +
+                                     "BEGIN INSERT INTO Components (Components) VALUES ('{0}') END", sComponent);
+                    InsertingIntoDB(SQLQuery);
+                }
             }
             catch
             {
@@ -366,10 +408,18 @@ namespace SandiaAerospaceShipping
         public static string OrderingColumns()
         {
             string sRet = string.Empty;
+            //Company, Shipping_Date, Shipping_Company, Cost, Repair
             string query1 = $"USE {GettingSettings._sDatabaseName} "+
                             "SELECT COLUMN_NAME " +
                             "FROM INFORMATION_SCHEMA.COLUMNS " +
-                            "WHERE TABLE_NAME = 'Shipping_Log' ORDER BY (CASE WHEN Column_Name = 'Log_ID' THEN 0 ELSE 1 END), Column_Name;";
+                            "WHERE TABLE_NAME = 'Shipping_Log' ORDER BY " +
+                            "(CASE Column_Name WHEN 'Log_ID' THEN 0 " +
+                            "WHEN 'Company' THEN 1 " +
+                            "WHEN 'Shipping_Date' THEN 2 " +
+                            "WHEN 'Shipping_Company' THEN 3 " +
+                            "WHEN 'Cost' THEN 4 " +
+                            "WHEN 'Repair' THEN 5 " +
+                            "ELSE 6 END), Column_Name ;";
             DataTable rs = GettingInfoFromDatabase(query1);
             string query2 = "select";
             string sep = " ";
@@ -385,6 +435,37 @@ namespace SandiaAerospaceShipping
             sRet = query2;
             return sRet;
         }
+        public static void DeletingFromLog(int pLogID)
+        {
+            string sSqlConnString = BuildingConnectionString();
+            string sSQLQuery = string.Empty;
+            try
+            {
+                using (var sc = new SqlConnection(sSqlConnString))
+                using (var cmd = sc.CreateCommand())
+                {
+
+                    if (pLogID != 0)
+                    {
+                        //sSQLQuery = string.Format("DELETE FROM dbo.Shipping_Log WHERE Log_ID = {0};", pLogID);
+                        cmd.CommandText = "DELETE FROM Shipping_Log WHERE Log_ID = @id";
+                        cmd.Parameters.AddWithValue("@id", pLogID);
+                    }
+                    if (sSqlConnString != "")
+                    {
+                        //SqlConnection SqlCon = new SqlConnection(sSqlConnString.Replace(GettingSettings._sDatabaseName, "master"));
+                        try
+                        {
+                            sc.Open();
+                            cmd.ExecuteNonQuery();
+                        }
+                        catch (Exception ex) { MessageBox.Show(ex.ToString()); }
+                    }
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message.ToString()); }
+        }
+        
 
     }
 
