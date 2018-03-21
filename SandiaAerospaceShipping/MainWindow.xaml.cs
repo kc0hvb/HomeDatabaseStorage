@@ -138,11 +138,6 @@ namespace SandiaAerospaceShipping
         }
 
 
-        private void button_Click(object sender, RoutedEventArgs e)
-        {
-            Window1 ServerConn = new Window1();
-            ServerConn.Show();
-        }
         public string InsertQuery()
         {
             string sRet = string.Empty;
@@ -187,6 +182,8 @@ namespace SandiaAerospaceShipping
                // MessageBox.Show(ex.Message.ToString());
             }
         }
+        
+        #region GUI Text Controls
         private void txtCost_TextChanged(object sender, TextChangedEventArgs e)
         {
             var textBox = sender as TextBox;
@@ -206,7 +203,9 @@ namespace SandiaAerospaceShipping
         {
             FillingMainDataGrid(true);
         }
+        #endregion
 
+        #region Button Controls
         private void bttnDelete_Click(object sender, RoutedEventArgs e)
         {
             if (MessageBox.Show(string.Format("This will delete LogID: {0} for Company: {1}?", iLogID, sCompany),  "Delete Shipment Log", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
@@ -219,6 +218,12 @@ namespace SandiaAerospaceShipping
                 //No Stuff
             }
         }
+        private void button_Click(object sender, RoutedEventArgs e)
+        {
+            Window1 ServerConn = new Window1();
+            ServerConn.Show();
+        }
+        #endregion
 
         #region Selection Change Events
         private void dataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
