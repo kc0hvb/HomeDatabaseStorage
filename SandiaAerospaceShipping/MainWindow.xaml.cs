@@ -62,6 +62,7 @@ namespace SandiaAerospaceShipping
             //StartingTimertoRefresh();
         }
 
+        #region Timer Events
         private void StartingTimertoRefresh()
         {
             System.Timers.Timer aTimer = new System.Timers.Timer();
@@ -69,7 +70,6 @@ namespace SandiaAerospaceShipping
             aTimer.Interval = 3600000;
             aTimer.Enabled = true;
         }
-
         private void OnTimedEvent(object source, ElapsedEventArgs e)
         {
             try
@@ -81,6 +81,7 @@ namespace SandiaAerospaceShipping
             }
             catch { }
         }
+        #endregion
 
         #region Adding Items to the UI
         public void AddingComponentsToGrid()
@@ -89,9 +90,10 @@ namespace SandiaAerospaceShipping
             List<ComponentsList> items = new List<ComponentsList>();
             try
             {
-                foreach (string sCom in Components())
+                DataTable dtComponents = DatabaseProcedure.GettingInfoFromDatabase("SELECT Components FROM Components ORDER BY Components;");
+                foreach(DataRow row in dtComponents.Rows)
                 {
-                    items.Add(new ComponentsList() { sComponent = sCom.Replace("_", " "), iQuantity = 0 });
+                    items.Add(new ComponentsList() { sComponent = row["Components"].ToString().Replace("_", " "), iQuantity = 0 });
                 }
                 MyCollectionList = items;
             }
@@ -100,7 +102,6 @@ namespace SandiaAerospaceShipping
 
             dgComponent.ItemsSource = MyCollection;
         }
-
         private void AddingItemsToDropDownList()
         {
             ObservableCollection<string> DropList = new ObservableCollection<string>();
@@ -111,7 +112,6 @@ namespace SandiaAerospaceShipping
             }
             this.cbShippingCompany.ItemsSource = DropList;
         }
-
         public static List<string> Components()
         {
             List<string> lComponentList = new List<string> { "Safe_128", "Safe_328", "Safe_528", "ACF_314", "ACF_328", "ACF_528",
@@ -128,7 +128,6 @@ namespace SandiaAerospaceShipping
         {
 
         }
-
         private void bttnSave_Click(object sender, RoutedEventArgs e)
         {
             dtShipDate.Text = DateTime.Now.ToString();
@@ -148,11 +147,6 @@ namespace SandiaAerospaceShipping
         }
 
 
-        private void button_Click(object sender, RoutedEventArgs e)
-        {
-            Window1 ServerConn = new Window1();
-            ServerConn.Show();
-        }
         public string InsertQuery()
         {
             string sRet = string.Empty;
@@ -198,12 +192,12 @@ namespace SandiaAerospaceShipping
             }
         }
 
+        #region Textbox Events
         private void txtCost_TextChanged(object sender, TextChangedEventArgs e)
         {
             var textBox = sender as TextBox;
             e.Handled = Regex.IsMatch(txtCost.Text, "[^0-9]+");
         }
-
         private void txtCost_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
             var textBox = sender as TextBox;
@@ -214,12 +208,13 @@ namespace SandiaAerospaceShipping
             var textBox = sender as TextBox;
             e.Handled = Regex.IsMatch(e.Text, "[^0-9]+");
         }
+        #endregion
 
+        #region Button Functions
         private void bttnRefresh_Click(object sender, RoutedEventArgs e)
         {
             FillingMainDataGrid(true);
         }
-
         private void bttnDelete_Click(object sender, RoutedEventArgs e)
         {
             if (MessageBox.Show(string.Format("This will delete LogID: {0} for Company: {1}?", iLogID, sCompany),  "Delete Shipment Log", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
@@ -232,6 +227,12 @@ namespace SandiaAerospaceShipping
                 //No Stuff
             }
         }
+        private void button_Click(object sender, RoutedEventArgs e)
+        {
+            Window1 ServerConn = new Window1();
+            ServerConn.Show();
+        }
+        #endregion
 
         private void dataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -244,14 +245,32 @@ namespace SandiaAerospaceShipping
     public class DatabaseProcedure
     {
         private static List<ComponentsList> MyCollectionList { get; set; }
+        public static DataTable GettingInfoFromDatabase(string pQuery)
+        {
+            DataTable dtInfo = new DataTable();
+            string sSqlConnString = BuildingConnectionString();
+            if (sSqlConnString != "")
+            {
+                SqlConnection SqlCon = new SqlConnection(sSqlConnString);
+                try
+                {
+                    SqlCommand SQLCom = new SqlCommand(pQuery, SqlCon);
+                    SqlDataAdapter sda = new SqlDataAdapter(SQLCom);
+                    sda.Fill(dtInfo);
+                }
+                catch (Exception ex) { MessageBox.Show(ex.Message.ToString()); }
+            }
+            return dtInfo;
+        }
         private static void FillingOutList()
         {
             List<ComponentsList> items = new List<ComponentsList>();
             try
             {
-                foreach (string sCom in MainWindow.Components())
+                DataTable dtComponents = DatabaseProcedure.GettingInfoFromDatabase("SELECT Components FROM Components ORDER BY Components;");
+                foreach (DataRow row in dtComponents.Rows)
                 {
-                    items.Add(new ComponentsList() { sComponent = sCom.Replace("_", " "), iQuantity = 0 });
+                    items.Add(new ComponentsList() { sComponent = row["Components"].ToString().Replace("_", " "), iQuantity = 0 });
                 }
                 MyCollectionList = items;
             }
@@ -320,6 +339,16 @@ namespace SandiaAerospaceShipping
                                       "([Component_ID] ASC)WITH(PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, " +
                                       "IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON[PRIMARY]) ON[PRIMARY] END";
                 InsertingIntoDB(sSQLQuery);
+                sSQLQuery = "IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'Components') " +
+                            "BEGIN ALTER TABLE Components ADD Components varchar(255); END";
+                InsertingIntoDB(sSQLQuery);
+                foreach (string sComponent in MainWindow.Components())
+                {
+                    sSQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM Components WHERE Components = '{0}') " +
+                                     "BEGIN INSERT INTO Components (Components) VALUES ('{0}') END", sComponent);
+                    InsertingIntoDB(sSQLQuery);
+                }
+
             }
             catch(Exception ex)
             {
@@ -330,17 +359,18 @@ namespace SandiaAerospaceShipping
         {
             FillingOutList();
             string SQLQuery = string.Empty;
-            InsertingColumns(pSQLConn, "Company", "varchar(255)");
-            InsertingColumns(pSQLConn, "Shipping_Date", "datetime");
-            InsertingColumns(pSQLConn, "Cost", "int");
-            InsertingColumns(pSQLConn, "Shipping_Company", "varchar(255)");
-            InsertingColumns(pSQLConn, "Repair", "bit");
+            InsertingColumns(pSQLConn, "Company", "varchar(255)", "");
+            InsertingColumns(pSQLConn, "Shipping_Date", "datetime", "");
+            InsertingColumns(pSQLConn, "Cost", "int", "");
+            InsertingColumns(pSQLConn, "Shipping_Company", "varchar(255)", "");
+            InsertingColumns(pSQLConn, "Repair", "bit", "");
             foreach (var item in MyCollectionList)
             {
-                InsertingColumns(pSQLConn, item.sComponent.Replace(" ", "_"), "int");
+                InsertingColumns(pSQLConn, item.sComponent.Replace(" ", "_"), "int", "0");
             }
+
         }
-        public static void InsertingColumns(string pSQLConn, string pColumn, string pFType)
+        public static void InsertingColumns(string pSQLConn, string pColumn, string pFType, string pDefault)
         {
             try
             {
@@ -349,23 +379,14 @@ namespace SandiaAerospaceShipping
                 {
                     string sAddingColumn = '"' + pColumn + '"';
                     SQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = '{0}') " +
-                                     "BEGIN ALTER TABLE Shipping_Log ADD {1} {2}; END", pColumn, sAddingColumn, pFType);
+                                     "BEGIN ALTER TABLE Shipping_Log ADD {1} {2} DEFAULT '{3}'; END", pColumn, sAddingColumn, pFType, pDefault);
                 }
                 else
                     SQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = '{0}') " +
-                                         "BEGIN ALTER TABLE Shipping_Log ADD {0} {1}; END", pColumn, pFType);
+                                         "BEGIN ALTER TABLE Shipping_Log ADD {0} {1} DEFAULT '{2}'; END", pColumn, pFType, pDefault);
                 InsertingIntoDB(SQLQuery);
-                SQLQuery = "IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE Name = 'Components') " +
-                     "BEGIN ALTER TABLE Components ADD Components varchar(255); END";
-                InsertingIntoDB(SQLQuery);
-                foreach (string sComponent in MainWindow.Components())
-                {
-                    SQLQuery = string.Format("IF NOT EXISTS (SELECT 1 FROM Components WHERE Components = '{0}') " +
-                                     "BEGIN INSERT INTO Components (Components) VALUES ('{0}') END", sComponent);
-                    InsertingIntoDB(SQLQuery);
-                }
             }
-            catch
+            catch (Exception ex)
             {
 
             }
@@ -387,23 +408,6 @@ namespace SandiaAerospaceShipping
 
                 catch (Exception ex) { MessageBox.Show(ex.Message.ToString()); }
             }
-        }
-        public static DataTable GettingInfoFromDatabase(string pQuery)
-        {
-            DataTable dtInfo = new DataTable();
-            string sSqlConnString = BuildingConnectionString();
-            if (sSqlConnString != "")
-            {
-                SqlConnection SqlCon = new SqlConnection(sSqlConnString);
-                try
-                {
-                    SqlCommand SQLCom = new SqlCommand(pQuery, SqlCon);
-                    SqlDataAdapter sda = new SqlDataAdapter(SQLCom);
-                    sda.Fill(dtInfo);
-                }
-                catch (Exception ex) { MessageBox.Show(ex.Message.ToString()); }
-            }
-            return dtInfo;
         }
         public static string OrderingColumns()
         {
