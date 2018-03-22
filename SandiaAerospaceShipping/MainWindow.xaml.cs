@@ -40,8 +40,6 @@ namespace SandiaAerospaceShipping
         public MainWindow()
         {
             InitializeComponent();
-            string sAppLoc
-            imgLogo.Source = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             GettingSettings.SettingValuesFromConfig();
             if (GettingSettings._sServer != null && GettingSettings._sServer != "")
             {
