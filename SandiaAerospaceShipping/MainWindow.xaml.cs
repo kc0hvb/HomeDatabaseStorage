@@ -16,6 +16,7 @@ using System.Windows.Shapes;
 using System.Configuration;
 using System.Security.Cryptography;
 using System.Security;
+using System.Reflection;
 using System.Data;
 using System.Collections.ObjectModel;
 using System.Data.SqlClient;
@@ -39,6 +40,8 @@ namespace SandiaAerospaceShipping
         public MainWindow()
         {
             InitializeComponent();
+            string sAppLoc
+            imgLogo.Source = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             GettingSettings.SettingValuesFromConfig();
             if (GettingSettings._sServer != null && GettingSettings._sServer != "")
             {
@@ -105,7 +108,7 @@ namespace SandiaAerospaceShipping
         private void AddingItemsToDropDownList()
         {
             ObservableCollection<string> DropList = new ObservableCollection<string>();
-            string[] lsShipping = { "UPS", "FedEx", "USPS" };
+            string[] lsShipping = { "UPS", "FedEx", "USPS", "DHL" };
             foreach (string item in lsShipping)
             {
                 DropList.Add(item);
@@ -119,7 +122,7 @@ namespace SandiaAerospaceShipping
                                                             "AIS_200B_35", "AIS_240B_35", "SA_3", "SA_3_L", "SA_3_NVG", "SA_15", "SA_24",
                                                             "SR_34_1", "SR_54_1", "SR_64_1", "SR_263", "SR_623", "GI_205", "STX_165",
                                                             "STX_165_Remote", "SAE_5_35", "360_PM", "360_Remote", "KI_300", "SAI_340",
-                                                            "305477_00_Kit", "ADC_00", "ADC_01", "Panel Punch"};
+                                                            "305477_00_Kit", "ADC_00", "ADC_01", "Panel_Punch", "ST_32_Kit", "Oat_Probe", };
             return lComponentList;
         }
         #endregion
