@@ -29,6 +29,7 @@ namespace SandiaAerospaceShipping
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Static Members
         private List<ComponentsList> MyCollectionList { get; set; }
         private static ObservableCollection<ComponentsList> MyCollection { get; set; }
         private static DatabaseProcedure dbProc = new DatabaseProcedure();
@@ -124,7 +125,7 @@ namespace SandiaAerospaceShipping
         #endregion
 
 
-        }
+        
         private void bttnSave_Click(object sender, RoutedEventArgs e)
         {
             dtShipDate.Text = DateTime.Now.ToString();
@@ -213,7 +214,6 @@ namespace SandiaAerospaceShipping
         {
             FillingMainDataGrid(true);
         }
-        #region Button Controls
         private void bttnDelete_Click(object sender, RoutedEventArgs e)
         {
             if (MessageBox.Show(string.Format("This will delete LogID: {0} for Company: {1}?", iLogID, sCompany),  "Delete Shipment Log", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
@@ -225,11 +225,6 @@ namespace SandiaAerospaceShipping
             {
                 //No Stuff
             }
-        }
-        private void button_Click(object sender, RoutedEventArgs e)
-        {
-            Window1 ServerConn = new Window1();
-            ServerConn.Show();
         }
         private void button_Click(object sender, RoutedEventArgs e)
         {
