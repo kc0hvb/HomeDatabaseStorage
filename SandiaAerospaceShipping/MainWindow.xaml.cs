@@ -443,7 +443,7 @@ namespace SandiaAerospaceShipping
                     query2 += sep + row["Column_Name"];
                 sep = ", ";
             }
-            query2 += $" from Shipping_Log";
+            query2 += $" from Shipping_Log ORDER BY Log_ID";
             sRet = query2;
             return sRet;
         }
