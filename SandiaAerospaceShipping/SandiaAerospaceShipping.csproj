@@ -59,8 +59,12 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="BackendProcs.cs" />
+    <Compile Include="DatabaseProcedure.cs" />
     <Compile Include="ServerConnection.xaml.cs">
       <DependentUpon>ServerConnection.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="AddComponent.xaml.cs">
+      <DependentUpon>AddComponent.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -75,6 +79,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="ServerConnection.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="AddComponent.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -6,13 +6,40 @@
         xmlns:local="clr-namespace:SandiaAerospaceShipping"
         mc:Ignorable="d"
         Title="Sandia Shipping Log" Height="695.333" Width="667.333" WindowState="Maximized" Icon="/images/logo-300x114.png">
+    <Window.Resources>
+        <Style x:Key="MyWaterMarkStyle" TargetType="{x:Type TextBox}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type TextBox}">
+                        <Grid>
+                            <Border Background="White" BorderBrush="#FF7D8683" BorderThickness="1"/>
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="5,0,0,0" VerticalAlignment="Center" />
+                            <Label Margin="5,0,0,0" x:Name="WaterMarkLabel" Content="{TemplateBinding Tag}" VerticalAlignment="Center"
+                               Visibility="Collapsed" Foreground="Gray" FontFamily="Arial"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="Text" Value=""/>
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Visibility" TargetName="WaterMarkLabel" Value="Visible"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="DimGray"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <Grid Background="#FFC6C7C8">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="0*"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Image x:Name="imgLogo" Grid.ColumnSpan="2" Height="46" Margin="0,10,9.667,0" VerticalAlignment="Top" Source="/images/logo-300x114.png" HorizontalAlignment="Right" Width="110"/>
-        <TextBox x:Name="txtCompany" HorizontalAlignment="Left" Height="24" Margin="56,27,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Grid.Column="1" TabIndex="0">
+        <TextBox Style="{StaticResource MyWaterMarkStyle}" Tag="Enter Company" x:Name="txtCompany" HorizontalAlignment="Left" Height="24" Margin="56,27,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" Grid.Column="1" TabIndex="0">
             <TextBox.BorderBrush>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
                     <GradientStop Color="#FFB9E0E1" Offset="0.468"/>
@@ -27,11 +54,11 @@
         <Button x:Name="bttnSave" Content="Save" HorizontalAlignment="Left" Margin="56,0,0,12" Width="75" Click="bttnSave_Click" Height="19" VerticalAlignment="Bottom" Grid.Column="1" RenderTransformOrigin="1.484,0.553" TabIndex="6" Background="White" Foreground="Black"/>
         <DataGrid ItemsSource="{Binding MyCollection}" x:Name="dgComponent" Margin="0,199,0,35.6" SelectionChanged="dataGrid1_SelectionChanged" AutoGenerateColumns="False" HorizontalAlignment="Left" Width="176" Grid.Column="1" TabIndex="5" Background="#FFD7D7D7">
             <DataGrid.Columns>
-                <DataGridTextColumn Binding="{Binding sComponent}" Header="Component" MinWidth="110" IsReadOnly="True" CanUserResize="False" CanUserReorder="False"/>
+                <DataGridTextColumn Binding="{Binding sComponent}" Header="Device" MinWidth="110" IsReadOnly="True" CanUserResize="False" CanUserReorder="False"/>
                 <DataGridTextColumn Binding="{Binding iQuantity}" Header="Quantity" CanUserResize="False" CanUserReorder="False"/>
             </DataGrid.Columns>
         </DataGrid>
-        <Button x:Name="bttnServerSettings" Content="Server Settings" HorizontalAlignment="Left" Margin="0,2,0,0" VerticalAlignment="Top" Width="176" Click="button_Click" Height="20" Grid.Column="1"/>
+        <Button x:Name="bttnServerSettings" Content="Server Settings" HorizontalAlignment="Left" Margin="0,2,0,0" VerticalAlignment="Top" Width="85" Click="button_Click" Height="20" Grid.Column="1"/>
         <TextBox x:Name="txtCost" Grid.ColumnSpan="2" HorizontalAlignment="Left" Height="23" Margin="56,85,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="120" TextChanged="txtCost_TextChanged" Text="0" PreviewTextInput="txtCost_PreviewTextInput" TabIndex="2">
             <TextBox.BorderBrush>
                 <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
@@ -53,6 +80,7 @@
         <Button x:Name="bttnRefresh" Grid.ColumnSpan="2" Content="Refresh" HorizontalAlignment="Left" Margin="10,174,0,0" VerticalAlignment="Top" Width="75" Click="bttnRefresh_Click"/>
         <CheckBox x:Name="chckbRepair" Grid.ColumnSpan="2" Content="Repair" HorizontalAlignment="Left" Margin="56,148,0,0" VerticalAlignment="Top" TabIndex="4"/>
         <Button x:Name="bttnDelete" Grid.ColumnSpan="2" Content="Delete" HorizontalAlignment="Left" Margin="101,174,0,0" VerticalAlignment="Top" Width="75" Click="bttnDelete_Click"/>
+        <Button x:Name="bttnAddComponent" Grid.ColumnSpan="2" Content="Add Device" HorizontalAlignment="Left" Margin="90,2,0,0" VerticalAlignment="Top" Width="95" Click="bttnAddComponent_Click"/>
     </Grid>
 
 </Window>
