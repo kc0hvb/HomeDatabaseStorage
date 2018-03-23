@@ -219,6 +219,7 @@ namespace SandiaAerospaceShipping
         {
             Window2 AddDevice = new Window2();
             AddDevice.ShowDialog();
+            DatabaseProcedure.BuildingColumns(DatabaseProcedure.BuildingConnectionString());
             AddingComponentsToGrid();
             FillingMainDataGrid(true);
         }
